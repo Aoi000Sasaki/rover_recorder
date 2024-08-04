@@ -36,7 +36,7 @@ struct sensorData{
 
 class DataRecorder {
     public:
-        DataRecorder(int videoLength);
+        DataRecorder(double videoLength);
         ~DataRecorder();
         void createSaveDir();
         bool startStream(OBSensorType sensorType);
@@ -62,12 +62,15 @@ class DataRecorder {
         std::shared_ptr<ob::StreamProfile> colorProfile;
         std::vector<int> compressionParams = {cv::IMWRITE_PNG_COMPRESSION,0, // not use ?
                                               cv::IMWRITE_PNG_STRATEGY,
-                                              cv::IMWRITE_PNG_STRATEGY_DEFAULT
-                                             };
+                                              cv::IMWRITE_PNG_STRATEGY_DEFAULT};
+        std::ofstream colorFile;
+        std::ofstream depthFile;
+        std::ofstream irRightFile;
+        std::ofstream irLeftFile;
         std::ofstream gyroFile;
         std::ofstream accelFile;
 
-        int videoLength;
+        double videoLength;
         int codec = cv::VideoWriter::fourcc('X','2','6','4');
         std::map<int, cv::VideoWriter> videoWriterMap;
 

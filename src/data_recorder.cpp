@@ -1,6 +1,6 @@
 #include "data_recorder.hpp"
 
-DataRecorder::DataRecorder(int videoLength) {
+DataRecorder::DataRecorder(double videoLength) {
     createSaveDir();
     this->videoLength = videoLength;
     this->config = std::make_shared<ob::Config>();
@@ -18,6 +18,39 @@ DataRecorder::DataRecorder(int videoLength) {
     this->isRecIrLeft = startStream(OB_SENSOR_IR_LEFT);
     this->isRecGyro = startStream(OB_SENSOR_GYRO);
     this->isRecAccel = startStream(OB_SENSOR_ACCEL);
+
+    if (this->isRecColor) {
+        this->colorFile.open(this->crtDir + "/color.csv");
+        if (!this->colorFile.is_open()) {
+            std::cerr << "Failed to open file: " << this->crtDir + "/color.csv" << std::endl;
+        } else {
+            this->colorFile << "timestamp [ms]" << std::endl;
+        }
+    }
+    if (this->isRecDepth) {
+        this->depthFile.open(this->crtDir + "/depth.csv");
+        if (!this->depthFile.is_open()) {
+            std::cerr << "Failed to open file: " << this->crtDir + "/depth.csv" << std::endl;
+        } else {
+            this->depthFile << "timestamp [ms]" << std::endl;
+        }
+    }
+    if (this->isRecIrRight) {
+        this->irRightFile.open(this->crtDir + "/ir_right.csv");
+        if (!this->irRightFile.is_open()) {
+            std::cerr << "Failed to open file: " << this->crtDir + "/ir_right.csv" << std::endl;
+        } else {
+            this->irRightFile << "timestamp [ms]" << std::endl;
+        }
+    }
+    if (this->isRecIrLeft) {
+        this->irLeftFile.open(this->crtDir + "/ir_left.csv");
+        if (!this->irLeftFile.is_open()) {
+            std::cerr << "Failed to open file: " << this->crtDir + "/ir_left.csv" << std::endl;
+        } else {
+            this->irLeftFile << "timestamp [ms]" << std::endl;
+        }
+    }
 
     saveSensorData();
     this->pipe.start(this->config);
@@ -54,7 +87,7 @@ void DataRecorder::process() {
         return;
     }
 
-    if(this->frameCount < 5) {
+    if (this->frameCount < 5) {
         this->frameCount++;
         return;
     }
@@ -85,6 +118,10 @@ void DataRecorder::process() {
             cv::Mat colorMat(data.height, data.width, CV_8UC3, colorFrame->data());
             this->videoWriterMap[OB_SENSOR_COLOR].write(colorMat);
             std::cout << "add frame to color video" << colorFrame->timeStamp() << std::endl;
+
+            if (this->colorFile.is_open()) {
+                this->colorFile << colorFrame->timeStamp() << std::endl;
+            }
         }
     }
     if (this->isRecDepth) {
@@ -98,6 +135,10 @@ void DataRecorder::process() {
             depthMat.convertTo(depthMat8, CV_8UC1, 255.0 / (max - min));
             this->videoWriterMap[OB_SENSOR_DEPTH].write(depthMat8);
             std::cout << "add frame to depth video" << depthFrame->timeStamp() << std::endl;
+
+            if (this->depthFile.is_open()) {
+                this->depthFile << depthFrame->timeStamp() << std::endl;
+            }
         }
     }
     if (this->isRecIrRight) {
@@ -107,6 +148,10 @@ void DataRecorder::process() {
             cv::Mat irRightMat(data.height, data.width, CV_8UC1, irRightFrame->data());
             this->videoWriterMap[OB_SENSOR_IR_RIGHT].write(irRightMat);
             std::cout << "add frame to ir_right video" << irRightFrame->timeStamp() << std::endl;
+
+            if (this->irRightFile.is_open()) {
+                this->irRightFile << irRightFrame->timeStamp() << std::endl;
+            }
         }
     }
     if (this->isRecIrLeft) {
@@ -116,6 +161,10 @@ void DataRecorder::process() {
             cv::Mat irLeftMat(data.height, data.width, CV_8UC1, irLeftFrame->data());
             this->videoWriterMap[OB_SENSOR_IR_LEFT].write(irLeftMat);
             std::cout << "add frame to ir_left video" << irLeftFrame->timeStamp() << std::endl;
+
+            if (this->irLeftFile.is_open()) {
+                this->irLeftFile << irLeftFrame->timeStamp() << std::endl;
+            }
         }
     }
 }
