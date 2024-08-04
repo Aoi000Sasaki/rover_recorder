@@ -1,9 +1,8 @@
 #include "data_recorder.hpp"
 
-DataRecorder::DataRecorder(int saveNum, int interval) {
+DataRecorder::DataRecorder(int videoLength) {
     createSaveDir();
-    this->saveNum = saveNum;
-    this->interval = interval;
+    this->videoLength = videoLength;
     this->config = std::make_shared<ob::Config>();
     ob::Context context;
     auto devList = context.queryDeviceList();
@@ -28,22 +27,22 @@ DataRecorder::~DataRecorder() {
 }
 
 void DataRecorder::startProcess() {
+    auto start = std::chrono::high_resolution_clock::now();
     while (true) {
-        auto start = std::chrono::high_resolution_clock::now();
         process();
 
-        if (!this->isRecColor && !this->isRecDepth && !this->isRecIrRight && !this->isRecIrLeft) {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start);
+        if (duration.count() > this->videoLength) {
+            for (auto &writer : this->videoWriterMap) {
+                writer.second.release();
+            }
             this->gyroFile.close();
             this->accelFile.close();
             this->pipe.stop();
             std::cout << "Record finished" << std::endl;
-            break;
-        }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        if (duration.count() < this->interval) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(this->interval - duration.count()));
+            break;
         }
     }
 }
@@ -62,7 +61,7 @@ void DataRecorder::process() {
 
     if (this->isRecColor) {
         auto colorFrame = frameset->colorFrame();
-        if (colorFrame != nullptr && this->colorCount < this->saveNum) {
+        if (colorFrame != nullptr) {
             if (colorFrame->format() != OB_FORMAT_RGB) {
                 if (colorFrame->format() == OB_FORMAT_MJPEG) {
                     this->filter.setFormatConvertType(FORMAT_MJPEG_TO_RGB888);
@@ -81,45 +80,42 @@ void DataRecorder::process() {
             }
             this->filter.setFormatConvertType(FORMAT_RGB888_TO_BGR);
             colorFrame = this->filter.process(colorFrame)->as<ob::ColorFrame>();
-            saveColor(colorFrame, this->colorCount);
 
-            this->colorCount++;
-            if (this->colorCount == this->saveNum) {
-                this->isRecColor = false;
-            }
+            sensorData data = this->sensorDataMap[OB_SENSOR_COLOR];
+            cv::Mat colorMat(data.height, data.width, CV_8UC3, colorFrame->data());
+            this->videoWriterMap[OB_SENSOR_COLOR].write(colorMat);
+            std::cout << "add frame to color video" << colorFrame->timeStamp() << std::endl;
         }
     }
     if (this->isRecDepth) {
         auto depthFrame = frameset->depthFrame();
-        if (depthFrame != nullptr && this->depthCount < this->saveNum) {
-            saveDepth(depthFrame, this->depthCount);
-
-            this->depthCount++;
-            if (this->depthCount == this->saveNum) {
-                this->isRecDepth = false;
-            }
+        if (depthFrame != nullptr) {
+            sensorData data = this->sensorDataMap[OB_SENSOR_DEPTH];
+            cv::Mat depthMat(data.height, data.width, CV_16UC1, depthFrame->data());
+            cv::Mat depthMat8;
+            double min, max;
+            cv::minMaxIdx(depthMat, &min, &max);
+            depthMat.convertTo(depthMat8, CV_8UC1, 255.0 / (max - min));
+            this->videoWriterMap[OB_SENSOR_DEPTH].write(depthMat8);
+            std::cout << "add frame to depth video" << depthFrame->timeStamp() << std::endl;
         }
     }
     if (this->isRecIrRight) {
         auto irRightFrame = frameset->getFrame(OB_FRAME_IR_RIGHT);
-        if (irRightFrame != nullptr && this->irRightCount < this->saveNum) {
-            saveIrRight(irRightFrame, this->irRightCount);
-
-            this->irRightCount++;
-            if (this->irRightCount == this->saveNum) {
-                this->isRecIrRight = false;
-            }
+        if (irRightFrame != nullptr) {
+            sensorData data = this->sensorDataMap[OB_SENSOR_IR_RIGHT];
+            cv::Mat irRightMat(data.height, data.width, CV_8UC1, irRightFrame->data());
+            this->videoWriterMap[OB_SENSOR_IR_RIGHT].write(irRightMat);
+            std::cout << "add frame to ir_right video" << irRightFrame->timeStamp() << std::endl;
         }
     }
     if (this->isRecIrLeft) {
         auto irLeftFrame = frameset->getFrame(OB_FRAME_IR_LEFT);
-        if (irLeftFrame != nullptr && this->irLeftCount < this->saveNum) {
-            saveIrLeft(irLeftFrame, this->irLeftCount);
-
-            this->irLeftCount++;
-            if (this->irLeftCount == this->saveNum) {
-                this->isRecIrLeft = false;
-            }
+        if (irLeftFrame != nullptr) {
+            sensorData data = this->sensorDataMap[OB_SENSOR_IR_LEFT];
+            cv::Mat irLeftMat(data.height, data.width, CV_8UC1, irLeftFrame->data());
+            this->videoWriterMap[OB_SENSOR_IR_LEFT].write(irLeftMat);
+            std::cout << "add frame to ir_left video" << irLeftFrame->timeStamp() << std::endl;
         }
     }
 }
@@ -143,12 +139,33 @@ bool DataRecorder::startStream(OBSensorType sensorType) {
                 auto profiles = this->pipe.getStreamProfileList(sensorType);
                 auto profile = profiles->getProfile(OB_PROFILE_DEFAULT);
                 auto videoProfile = profile->as<ob::VideoStreamProfile>();
+                bool isColor = false;
                 if (sensorType == OB_SENSOR_COLOR) {
                     this->colorProfile = profile;
+                    isColor = true;
                 }
 
                 setCameraParams(videoProfile, sensorType);
                 this->config->enableStream(videoProfile);
+
+                std::string fileName = this->crtDir + "/";
+                switch (sensorType) {
+                    case OB_SENSOR_COLOR:
+                        fileName += "color"; break;
+                    case OB_SENSOR_DEPTH:
+                        fileName += "depth"; break;
+                    case OB_SENSOR_IR_RIGHT:
+                        fileName += "ir_right"; break;
+                    case OB_SENSOR_IR_LEFT:
+                        fileName += "ir_left"; break;
+                    default:
+                        fileName += "sensorType_" + std::to_string(sensorType);
+                        break;
+                }
+                double fps = videoProfile->fps();
+                cv::Size size(videoProfile->width(), videoProfile->height());
+                cv::VideoWriter writer(fileName + ".mp4", this->codec, fps, size, isColor);
+                this->videoWriterMap[sensorType] = writer;
         } else if (sensorType == OB_SENSOR_GYRO) {
             auto profile = sensor->getStreamProfileList()->getProfile(OB_PROFILE_DEFAULT);
             auto gyroCallback = [this](std::shared_ptr<ob::Frame> frame) {
@@ -253,40 +270,7 @@ void DataRecorder::setCameraParams(std::shared_ptr<ob::VideoStreamProfile> video
         .r = r,
         .t = t,
         .format = videoProfile->format(),
-        .saveNum = this->saveNum,
     };
-}
-
-void DataRecorder::saveColor(std::shared_ptr<ob::ColorFrame> colorFrame, int count) {
-    sensorData data = this->sensorDataMap[OB_SENSOR_COLOR];
-    std::string colorPath = this->crtDir + "/color/" + std::to_string(count) + "_" + std::to_string(colorFrame->timeStamp()) + "ms.png";
-    cv::Mat colorMat(data.height, data.width, CV_8UC3, colorFrame->data());
-    cv::imwrite(colorPath, colorMat, this->compressionParams);
-    std::cout << "Save color image: " << colorPath << std::endl;
-}
-
-void DataRecorder::saveDepth(std::shared_ptr<ob::DepthFrame> depthFrame, int count) {
-    sensorData data = this->sensorDataMap[OB_SENSOR_DEPTH];
-    std::string depthPath = this->crtDir + "/depth/" + std::to_string(count) + "_" + std::to_string(depthFrame->timeStamp()) + "ms.png";
-    cv::Mat depthMat(data.height, data.width, CV_16UC1, depthFrame->data());
-    cv::imwrite(depthPath, depthMat, this->compressionParams);
-    std::cout << "Save depth image: " << depthPath << std::endl;
-}
-
-void DataRecorder::saveIrRight(std::shared_ptr<ob::Frame> irFrame, int count) {
-    sensorData data = this->sensorDataMap[OB_SENSOR_IR_RIGHT];
-    std::string irRightPath = this->crtDir + "/ir_right/" + std::to_string(count) + "_" + std::to_string(irFrame->timeStamp()) + "ms.png";
-    cv::Mat irRightMat(data.height, data.width, CV_8UC1, irFrame->data());
-    cv::imwrite(irRightPath, irRightMat, this->compressionParams);
-    std::cout << "Save IR_Right image: " << irRightPath << std::endl;
-}
-
-void DataRecorder::saveIrLeft(std::shared_ptr<ob::Frame> irFrame, int count) {
-    sensorData data = this->sensorDataMap[OB_SENSOR_IR_LEFT];
-    std::string irLeftPath = this->crtDir + "/ir_left/" + std::to_string(count) + "_" + std::to_string(irFrame->timeStamp()) + "ms.png";
-    cv::Mat irLeftMat(data.height, data.width, CV_8UC1, irFrame->data());
-    cv::imwrite(irLeftPath, irLeftMat, this->compressionParams);
-    std::cout << "Save IR_Left image: " << irLeftPath << std::endl;
 }
 
 void DataRecorder::saveGyro(std::shared_ptr<ob::Frame> frame) {
@@ -354,50 +338,6 @@ void DataRecorder::createSaveDir() {
     } else {
         std::cout << "Directory already exists: " << pCrtDir << std::endl;
     }
-    fs::path depthDir(this->crtDir + "/depth");
-    if(!fs::exists(depthDir)) {
-        if(fs::create_directory(depthDir)) {
-            std::cout << "Directory created: " << depthDir << std::endl;
-        } else {
-            std::cerr << "Failed to create directory: " << depthDir << std::endl;
-            exit(1);
-        }
-    } else {
-        std::cout << "Directory already exists: " << depthDir << std::endl;
-    }
-    fs::path colorDir(this->crtDir + "/color");
-    if(!fs::exists(colorDir)) {
-        if(fs::create_directory(colorDir)) {
-            std::cout << "Directory created: " << colorDir << std::endl;
-        } else {
-            std::cerr << "Failed to create directory: " << colorDir << std::endl;
-            exit(1);
-        }
-    } else {
-        std::cout << "Directory already exists: " << colorDir << std::endl;
-    }
-    fs::path irRightDir(this->crtDir + "/ir_right");
-    if(!fs::exists(irRightDir)) {
-        if(fs::create_directory(irRightDir)) {
-            std::cout << "Directory created: " << irRightDir << std::endl;
-        } else {
-            std::cerr << "Failed to create directory: " << irRightDir << std::endl;
-            exit(1);
-        }
-    } else {
-        std::cout << "Directory already exists: " << irRightDir << std::endl;
-    }
-    fs::path irLeftDir(this->crtDir + "/ir_left");
-    if(!fs::exists(irLeftDir)) {
-        if(fs::create_directory(irLeftDir)) {
-            std::cout << "Directory created: " << irLeftDir << std::endl;
-        } else {
-            std::cerr << "Failed to create directory: " << irLeftDir << std::endl;
-            exit(1);
-        }
-    } else {
-        std::cout << "Directory already exists: " << irLeftDir << std::endl;
-    }
 }
 
 void DataRecorder::saveSensorData() {
@@ -408,8 +348,7 @@ void DataRecorder::saveSensorData() {
         return;
     }
     nlohmann::json j;
-    j["saveNum"] = this->saveNum;
-    j["interval"] = this->interval;
+    j["videoLength"] = this->videoLength;
     j["currentDir"] = this->crtDir;
     for (auto &sensor : this->sensorDataMap) {
         if (sensor.first == OB_SENSOR_COLOR) {
@@ -455,6 +394,5 @@ nlohmann::json DataRecorder::convertToJson(sensorData data) {
     j["r"] = data.r;
     j["t"] = data.t;
     j["format"] = data.format;
-    j["saveNum"] = data.saveNum;
     return j;
 }

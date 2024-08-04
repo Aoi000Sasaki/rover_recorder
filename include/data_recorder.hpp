@@ -32,12 +32,11 @@ struct sensorData{
     std::vector<double> r;
     std::vector<double> t;
     int format = 0; // see: ../api/English/ObTypes_8h.html#a30904eab1a667b797e7ce1099ba7c36a
-    int saveNum = 0;
 };
 
 class DataRecorder {
     public:
-        DataRecorder(int saveNum, int interval);
+        DataRecorder(int videoLength);
         ~DataRecorder();
         void createSaveDir();
         bool startStream(OBSensorType sensorType);
@@ -61,14 +60,16 @@ class DataRecorder {
         std::shared_ptr<ob::Device> device;
         std::map<int, sensorData> sensorDataMap;
         std::shared_ptr<ob::StreamProfile> colorProfile;
-        std::vector<int> compressionParams = {cv::IMWRITE_PNG_COMPRESSION,0,
+        std::vector<int> compressionParams = {cv::IMWRITE_PNG_COMPRESSION,0, // not use ?
                                               cv::IMWRITE_PNG_STRATEGY,
                                               cv::IMWRITE_PNG_STRATEGY_DEFAULT
                                              };
         std::ofstream gyroFile;
         std::ofstream accelFile;
-        int saveNum = 0;
-        int interval = 100; // TODO: ms?
+
+        int videoLength;
+        int codec = cv::VideoWriter::fourcc('X','2','6','4');
+        std::map<int, cv::VideoWriter> videoWriterMap;
 
         std::string crtDir;
         bool isRecColor = true;
@@ -78,10 +79,6 @@ class DataRecorder {
         bool isRecGyro = true;
         bool isRecAccel = true;
         int frameCount = 0;
-        int colorCount = 0;
-        int depthCount = 0;
-        int irRightCount = 0;
-        int irLeftCount = 0;
 };
 
 #endif
