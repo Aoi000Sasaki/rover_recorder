@@ -213,7 +213,7 @@ void ImageStreamManager::processColorFrame(std::shared_ptr<ob::FrameSet> framese
     }
 
     if (this->isSaveImage) {
-        std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(colorFrame->timeStamp()) + "ms.png";
+        std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(colorFrame->timeStamp()) + "ms" + this->imageFormat;
         cv::imwrite(imageName, colorMat, this->compressionParams);
         std::cout << "save color image: " << imageName << std::endl;
     }
@@ -240,8 +240,9 @@ void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> framese
     }
 
     if (this->isSaveImage) {
-        std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(depthFrame->timeStamp()) + "ms.png";
-        cv::imwrite(imageName, depthMat, this->compressionParams);
+        std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(depthFrame->timeStamp()) + "ms" + this->imageFormat;
+        // cv::imwrite(imageName, depthMat, this->compressionParams);
+        cv::imwrite(imageName, depthMat8, this->compressionParams);
         std::cout << "save depth image: " << imageName << std::endl;
     }
 
@@ -265,7 +266,7 @@ void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> frameset) 
     }
 
     if (this->isSaveImage) {
-        std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(irFrame->timeStamp()) + "ms.png";
+        std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(irFrame->timeStamp()) + "ms" + this->imageFormat;
         cv::imwrite(imageName, irMat, this->compressionParams);
         std::cout << "save ir image: " << imageName << std::endl;
     }

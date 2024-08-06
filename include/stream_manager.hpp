@@ -56,12 +56,29 @@ class ImageStreamManager : public StreamManager {
         bool isSaveImage;
         std::shared_ptr<ob::StreamProfile> colorProfile;
         ob::FormatConvertFilter filter;
-        std::string containerFormat = ".avi";
-        int codec = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
-        std::vector<int> compressionParams = {cv::IMWRITE_PNG_COMPRESSION,
-                                              0, // not use ?
-                                              cv::IMWRITE_PNG_STRATEGY,
-                                              cv::IMWRITE_PNG_STRATEGY_DEFAULT};
+
+        // .avi
+        // std::string containerFormat = ".avi";
+        // int codec = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
+
+        // .mp4
+        std::string containerFormat = ".mp4";
+        int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
+
+        // .png
+        // must change ImageStreamManager::processDepthFrame cv::imwrite argument depthMat8 to depthMat
+        // std::string imageFormat = ".png";
+        // std::vector<int> compressionParams = {cv::IMWRITE_PNG_COMPRESSION,
+        //                                       0,
+        //                                       cv::IMWRITE_PNG_STRATEGY,
+        //                                       cv::IMWRITE_PNG_STRATEGY_DEFAULT};
+
+        // .jpg
+        // must change ImageStreamManager::processDepthFrame cv::imwrite argument depthMat to depthMat8
+        std::string imageFormat = ".jpg";
+        std::vector<int> compressionParams = {cv::IMWRITE_JPEG_QUALITY,
+                                              100};
+
         std::string videoName;
         std::string timecodeName;
         cv::VideoWriter videoWriter;
