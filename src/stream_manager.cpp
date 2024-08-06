@@ -43,6 +43,10 @@ std::string StreamManager::getStreamName() {
     return this->streamName;
 }
 
+int StreamManager::getSensorType() {
+    return this->sensorType;
+}
+
 nlohmann::json StreamManager::getMetadata() {
     nlohmann::json metadata;
     metadata["sensorType"] = this->sensorType;
@@ -162,8 +166,6 @@ void ImageStreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset)
         return;
     }
 
-    ob::FrameSet frameSet = *frameset;
-
     switch (this->sensorType) {
         case OB_SENSOR_COLOR:
             processColorFrame(frameset);
@@ -247,9 +249,11 @@ void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> framese
 }
 
 void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> frameset) {
-    auto irFrame = frameset->getFrame(this->sensorType);
-    if (irFrame == nullptr) {
-        return;
+    std::shared_ptr<ob::Frame> irFrame;
+    if (this->sensorType == OB_SENSOR_IR_LEFT) {
+        irFrame = frameset->getFrame(OB_FRAME_IR_LEFT);
+    } else if (this->sensorType == OB_SENSOR_IR_RIGHT) {
+        irFrame = frameset->getFrame(OB_FRAME_IR_RIGHT);
     }
 
     cv::Mat irMat(this->height, this->width, CV_8UC1, irFrame->data());

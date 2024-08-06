@@ -19,6 +19,7 @@ class StreamManager {
                       int profileIdx);
         virtual ~StreamManager();
         std::string getStreamName();
+        int getSensorType();
         virtual nlohmann::json getMetadata();
         virtual void processFrameset(std::shared_ptr<ob::FrameSet> frameset);
         virtual void close();

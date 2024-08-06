@@ -61,7 +61,8 @@ void DataRecorder::process() {
         return;
     }
 
-    for (auto &manager : this->streamManagers) {
+    for (auto &manager : this->streamManagers)
+    {
         manager->processFrameset(frameset);
     }
 }
