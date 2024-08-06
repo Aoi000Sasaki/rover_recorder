@@ -1,30 +1,29 @@
 #include "data_recorder.hpp"
+#include "libobsensor/ObSensor.hpp"
+
+std::vector<StreamInfo> openStreams{
+    {OB_SENSOR_COLOR,    "color",    true, false, OB_PROFILE_DEFAULT},
+    {OB_SENSOR_DEPTH,    "depth",    true, true,  OB_PROFILE_DEFAULT},
+    {OB_SENSOR_IR_RIGHT, "ir_right", true, false, OB_PROFILE_DEFAULT},
+    {OB_SENSOR_IR_LEFT,  "ir_left",  true, false, OB_PROFILE_DEFAULT},
+    {OB_SENSOR_GYRO,     "gyro",     true, false, OB_PROFILE_DEFAULT},
+    {OB_SENSOR_ACCEL,    "accel",    true, false, OB_PROFILE_DEFAULT}};
 
 int main(int argc, char** argv) {
-    int saveNum = 10;
-    int interval = 50;
-    if (argc == 3) {
+    float videoLength = 3; // seconds
+    std::string saveDir = "/home/amsl/orbbec-ws/src/rover_recorder/";
+
+    if (argc == 2) {
         try {
-            saveNum = std::stoi(argv[1]);
-            interval = std::stoi(argv[2]);
+            videoLength = std::stod(argv[1]);
         } catch (std::invalid_argument &e) {
-            std::cout << "saveNum set to default value: " << saveNum << std::endl;
-            std::cout << "interval set to default value: " << interval << std::endl;
-        }
-    } else if (argc == 2) {
-        try {
-            saveNum = std::stoi(argv[1]);
-            std::cout << "interval set to default value: " << interval << std::endl;
-        } catch (std::invalid_argument &e) {
-            std::cout << "saveNum set to default value: " << saveNum << std::endl;
-            std::cout << "interval set to default value: " << interval << std::endl;
+            std::cout << "videoLength set to default value: " << videoLength << std::endl;
         }
     } else {
-        std::cout << "saveNum set to default value: " << saveNum << std::endl;
-        std::cout << "interval set to default value: " << interval << std::endl;
+        std::cout << "videoLength set to default value: " << videoLength << std::endl;
     }
 
-    DataRecorder dataRecorder(saveNum, interval);
+    DataRecorder dataRecorder(openStreams, videoLength, saveDir);
     dataRecorder.startProcess();
     return 0;
 }

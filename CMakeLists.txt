@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.13)
 project(rover_recorder CXX)
 
-add_executable(rover_recorder src/main.cpp src/data_recorder.cpp)
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD_REQUIRED True)
+
+add_executable(rover_recorder src/main.cpp src/data_recorder.cpp src/stream_manager.cpp)
 
 set(OrbbecSDK_DIR "/home/amsl/orbbec-ws/src/OrbbecSDK")
 find_package(OrbbecSDK REQUIRED)

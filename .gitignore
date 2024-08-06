@@ -1,2 +1,6 @@
 build/
 .vscode/
+data_old/
+data/
+src/Log
+Log
