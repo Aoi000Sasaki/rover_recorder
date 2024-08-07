@@ -120,17 +120,23 @@ ImageStreamManager::ImageStreamManager(std::shared_ptr<ob::Pipeline> pipe,
         // Set camera parameters
         setCameraParams(videoProfile, isColor);
 
-        // Open video writer
-        this->videoName = saveDir + "/" + streamName + this->containerFormat;
-        float fps = videoProfile->fps();
-        cv::Size frameSize(videoProfile->width(), videoProfile->height());
-        this->videoWriter.open(this->videoName, this->codec, fps, frameSize, isColor);
-
         // Open timecode writer
         this->timecodeName = saveDir + "/" + streamName + "_timecode.txt";
         this->timecodeWriter.open(this->timecodeName);
         if (this->timecodeWriter.is_open()) {
-            this->timecodeWriter << "timestamp [ms]" << std::endl;
+            if (sensorType == OB_SENSOR_DEPTH) {
+                this->timecodeWriter << "timestamp [ms],value scale" << std::endl;
+            } else {
+                this->timecodeWriter << "timestamp [ms]" << std::endl;
+            }
+        }
+
+        // Open video writer
+        if (this->isSaveVideo) {
+            this->videoName = saveDir + "/" + streamName + this->containerFormat;
+            float fps = videoProfile->fps();
+            cv::Size frameSize(videoProfile->width(), videoProfile->height());
+            this->videoWriter.open(this->videoName, this->codec, fps, frameSize, isColor);
         }
 
         // Create image directory
@@ -206,9 +212,10 @@ inline void ImageStreamManager::processColorFrame(std::shared_ptr<ob::FrameSet> 
     colorFrame = this->filter.process(colorFrame)->as<ob::ColorFrame>();
     cv::Mat colorMat(this->height, this->width, CV_8UC3, colorFrame->data());
 
+    this->timecodeWriter << colorFrame->timeStamp() << std::endl;
+
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(colorMat);
-        this->timecodeWriter << colorFrame->timeStamp() << std::endl;
         std::cout << "add frame to color video" << colorFrame->timeStamp() << std::endl;
     }
 
@@ -227,22 +234,24 @@ inline void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> 
         return;
     }
 
+    float valueScale = depthFrame->getValueScale();
     cv::Mat depthMat(this->height, this->width, CV_16UC1, depthFrame->data());
     cv::Mat depthMat8;
     double min, max;
     cv::minMaxLoc(depthMat, &min, &max);
     depthMat.convertTo(depthMat8, CV_8UC1, 255.0 / (max - min));
 
+    this->timecodeWriter << depthFrame->timeStamp() << "," << valueScale << std::endl;
+
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(depthMat8);
-        this->timecodeWriter << depthFrame->timeStamp() << std::endl;
         std::cout << "add frame to depth video" << depthFrame->timeStamp() << std::endl;
     }
 
     if (this->isSaveImage) {
         std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(depthFrame->timeStamp()) + "ms" + this->imageFormat;
-        // cv::imwrite(imageName, depthMat, this->compressionParams);
-        cv::imwrite(imageName, depthMat8, this->compressionParams);
+        cv::imwrite(imageName, depthMat, this->compressionParams);
+        // cv::imwrite(imageName, depthMat8, this->compressionParams);
         std::cout << "save depth image: " << imageName << std::endl;
     }
 
@@ -259,9 +268,10 @@ inline void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> fra
 
     cv::Mat irMat(this->height, this->width, CV_8UC1, irFrame->data());
 
+    this->timecodeWriter << irFrame->timeStamp() << std::endl;
+    
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(irMat);
-        this->timecodeWriter << irFrame->timeStamp() << std::endl;
         std::cout << "add frame to ir video" << irFrame->timeStamp() << std::endl;
     }
 
@@ -328,10 +338,15 @@ void ImageStreamManager::setCameraParams(std::shared_ptr<ob::VideoStreamProfile>
 
 nlohmann::json ImageStreamManager::getMetadata() {
     nlohmann::json metadata;
+    metadata["streamName"] = this->streamName;
     metadata["sensorType"] = this->sensorType;
     metadata["profileIdx"] = this->profileIdx;
     metadata["isSaveVideo"] = this->isSaveVideo;
     metadata["isSaveImage"] = this->isSaveImage;
+    metadata["containerFormat"] = this->containerFormat;
+    metadata["codec"] = this->codec;
+    metadata["imageFormat"] = this->imageFormat;
+    metadata["compressionParams"] = this->compressionParams;
 
     if (!this->isEnable) {
         metadata["isEnable"] = false;
@@ -451,6 +466,7 @@ nlohmann::json ImuStreamManager::getMetadata() {
     nlohmann::json metadata;
     metadata["sensorType"] = this->sensorType;
     metadata["profileIdx"] = this->profileIdx;
+    metadata["streamName"] = this->streamName;
 
     if (!this->isEnable) {
         metadata["isEnable"] = false;
