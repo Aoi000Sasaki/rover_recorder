@@ -49,7 +49,7 @@ void DataRecorder::startProcess() {
     }
 }
 
-void DataRecorder::process() {
+inline void DataRecorder::process() {
     auto frameset = this->pipe->waitForFrames(100);
     if(frameset == nullptr) {
         std::cout << "The frameset is null!" << std::endl;

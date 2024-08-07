@@ -63,11 +63,11 @@ nlohmann::json StreamManager::getMetadata() {
     }
 }
 
-void StreamManager::close() {
+inline void StreamManager::close() {
     return;
 }
 
-void StreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset) {
+inline void StreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset) {
     return;
 }
 
@@ -161,7 +161,7 @@ ImageStreamManager::ImageStreamManager(std::shared_ptr<ob::Pipeline> pipe,
     }
 }
 
-void ImageStreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset) {
+inline void ImageStreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset) {
     if (!this->isEnable) {
         return;
     }
@@ -182,7 +182,7 @@ void ImageStreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset)
     }
 }
 
-void ImageStreamManager::processColorFrame(std::shared_ptr<ob::FrameSet> frameset) {
+inline void ImageStreamManager::processColorFrame(std::shared_ptr<ob::FrameSet> frameset) {
     auto colorFrame = frameset->colorFrame();
     if (colorFrame == nullptr) {
         return;
@@ -221,7 +221,7 @@ void ImageStreamManager::processColorFrame(std::shared_ptr<ob::FrameSet> framese
     this->count++;
 }
 
-void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> frameset) {
+inline void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> frameset) {
     auto depthFrame = frameset->depthFrame();
     if (depthFrame == nullptr) {
         return;
@@ -249,7 +249,7 @@ void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> framese
     this->count++;
 }
 
-void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> frameset) {
+inline void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> frameset) {
     std::shared_ptr<ob::Frame> irFrame;
     if (this->sensorType == OB_SENSOR_IR_LEFT) {
         irFrame = frameset->getFrame(OB_FRAME_IR_LEFT);
@@ -414,7 +414,7 @@ ImuStreamManager::ImuStreamManager(std::shared_ptr<ob::Pipeline> pipe,
     }
 }
 
-void ImuStreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset) {
+inline void ImuStreamManager::processFrameset(std::shared_ptr<ob::FrameSet> frameset) {
     return;
 }
 
@@ -424,7 +424,7 @@ void ImuStreamManager::close() {
     }
 }
 
-void ImuStreamManager::imuCallback(std::shared_ptr<ob::Frame> frame) {
+inline void ImuStreamManager::imuCallback(std::shared_ptr<ob::Frame> frame) {
     if (!this->isEnable) {
         return;
     }
