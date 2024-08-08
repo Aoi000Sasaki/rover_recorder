@@ -63,7 +63,7 @@ class ImageStreamManager : public StreamManager {
 
         // .mp4
         std::string containerFormat = ".mp4";
-        int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
+        int codec = cv::VideoWriter::fourcc('X', '2', '6', '4');
 
         // .png (16bit)
         // must change ImageStreamManager::processDepthFrame cv::imwrite argument depthMat8 to depthMat
