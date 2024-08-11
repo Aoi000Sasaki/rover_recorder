@@ -7,5 +7,6 @@
     "videoLength": 5.0,
     "saveDir": "/home/amsl/orbbec-ws/src/rover_recorder/",
     "jpgQuality": 100,
-    "jp2Quality": 600
+    "jp2Quality": 600,
+    "pngQuality": 9
 }

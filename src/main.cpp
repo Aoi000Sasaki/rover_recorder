@@ -96,14 +96,15 @@ Settings loadSettings(const std::string& settingsPath) {
                 codecs.push_back(0);
             }
             imageFormats.push_back(j["imageFormats"][i]);
-            if (imageFormats[i] == ".jpeg") {
+            if (imageFormats[i] == ".jpg") {
                 int quality = j["jpgQuality"];
                 compressionParams.push_back({cv::IMWRITE_JPEG_QUALITY, quality});
             } else if (imageFormats[i] == ".jp2") {
                 int quality = j["jp2Quality"];
                 compressionParams.push_back({cv::IMWRITE_JPEG2000_COMPRESSION_X1000, quality});
             } else if (imageFormats[i] == ".png") {
-                compressionParams.push_back({cv::IMWRITE_PNG_COMPRESSION, 9});
+                int quality = j["pngQuality"];
+                compressionParams.push_back({cv::IMWRITE_PNG_COMPRESSION, quality});
             } else {
                 compressionParams.push_back({});
             }
