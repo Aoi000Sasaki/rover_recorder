@@ -35,7 +35,7 @@ Settings loadSettings(const std::string& settingsPath) {
             {".jpg", ".jp2", ".jpg", ".jpg", "", ""},
             {{cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {}, {}},
             3.0,
-            "/home/amsl/orbbec-ws/src/rover_recorder/",
+            "/home/amsl/orbbec-ws/src/rover_recorder",
         };
         return settings;
     } else {

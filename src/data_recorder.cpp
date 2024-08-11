@@ -2,7 +2,7 @@
 
 DataRecorder::DataRecorder(Settings settings) {
     this->videoLength = settings.videoLength;
-    this->saveDir = settings.saveDir + "data/";
+    this->saveDir = settings.saveDir + "/data/";
     this->pipe = std::make_shared<ob::Pipeline>();
     this->config = std::make_shared<ob::Config>();
     createSaveDir();
