@@ -43,7 +43,11 @@ class ImageStreamManager : public StreamManager {
                            const std::string& saveDir,
                            int profileIdx,
                            bool isSaveVideo,
-                           bool isSaveImage);
+                           bool isSaveImage,
+                           const std::string& containerFormat,
+                           int codec,
+                           const std::string& imageFormat,
+                           std::vector<int> compressionParams);
         nlohmann::json getMetadata() override;
         void processFrameset(std::shared_ptr<ob::FrameSet> frameset) override;
         void close() override;
@@ -57,27 +61,10 @@ class ImageStreamManager : public StreamManager {
         std::shared_ptr<ob::StreamProfile> colorProfile;
         ob::FormatConvertFilter filter;
 
-        // .avi
-        // std::string containerFormat = ".avi";
-        // int codec = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
-
-        // .mp4
-        std::string containerFormat = ".mp4";
-        int codec = cv::VideoWriter::fourcc('X', '2', '6', '4');
-
-        // .png (16bit)
-        // must change ImageStreamManager::processDepthFrame cv::imwrite argument depthMat8 to depthMat
-        std::string imageFormat = ".png";
-        std::vector<int> compressionParams = {cv::IMWRITE_PNG_COMPRESSION,
-                                              0,
-                                              cv::IMWRITE_PNG_STRATEGY,
-                                              cv::IMWRITE_PNG_STRATEGY_DEFAULT};
-
-        // .jpg (8bit)
-        // must change ImageStreamManager::processDepthFrame cv::imwrite argument depthMat to depthMat8
-        // std::string imageFormat = ".jpg";
-        // std::vector<int> compressionParams = {cv::IMWRITE_JPEG_QUALITY,
-        //                                       100};
+        std::string containerFormat;
+        int codec;
+        std::string imageFormat;
+        std::vector<int> compressionParams;
 
         std::string videoName;
         std::string timecodeName;

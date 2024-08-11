@@ -13,17 +13,23 @@
 #include "opencv2/opencv.hpp"
 #include "stream_manager.hpp"
 
-struct StreamInfo {
-    OBSensorType sensorType;
-    std::string streamName;
-    bool isSaveVideo;
-    bool isSaveImage;
-    int profileIdx;
+struct Settings {
+    std::vector<OBSensorType> sensorTypes;
+    std::vector<std::string> streamNames;
+    std::vector<bool> isSaveVideo;
+    std::vector<bool> isSaveImage;
+    std::vector<int> profileIdx;
+    std::vector<std::string> containerFormats;
+    std::vector<int> codecs;
+    std::vector<std::string> imageFormats;
+    std::vector<std::vector<int>> compressionParams;
+    float videoLength;
+    std::string saveDir;
 };
 
 class DataRecorder {
     public:
-        DataRecorder(std::vector<StreamInfo> info, float videoLength, const std::string& saveDir);
+        DataRecorder(Settings settings);
         void createSaveDir();
         void startProcess();
         void process();

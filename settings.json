@@ -1,0 +1,11 @@
+{
+    "sensorTypes": [2, 3, 7, 6, 5, 4],
+    "isSaveVideo": [true, true, true, true, true, true],
+    "isSaveImage": [true, true, true, true, true, true],
+    "containerFormats": [".mp4", ".mp4", ".mp4", ".mp4", "-", "-"],
+    "imageFormats": [".jpg", ".jp2", ".jpg", ".jpg", "-", "-"],
+    "videoLength": 5.0,
+    "saveDir": "/home/amsl/orbbec-ws/src/rover_recorder/",
+    "jpgQuality": 100,
+    "jp2Quality": 600
+}

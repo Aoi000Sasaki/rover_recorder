@@ -1,8 +1,8 @@
 #include "data_recorder.hpp"
 
-DataRecorder::DataRecorder(std::vector<StreamInfo> info, float videoLength, const std::string& saveDir) {
-    this->videoLength = videoLength;
-    this->saveDir = saveDir + "data/";
+DataRecorder::DataRecorder(Settings settings) {
+    this->videoLength = settings.videoLength;
+    this->saveDir = settings.saveDir + "data/";
     this->pipe = std::make_shared<ob::Pipeline>();
     this->config = std::make_shared<ob::Config>();
     createSaveDir();
@@ -17,13 +17,17 @@ DataRecorder::DataRecorder(std::vector<StreamInfo> info, float videoLength, cons
     this->device = devList->getDevice(0);
 
     // Enable all streams
-    for (auto i : info) {
-        if (i.sensorType == OB_SENSOR_GYRO || i.sensorType == OB_SENSOR_ACCEL) {
-            auto sm = std::make_shared<ImuStreamManager>(this->pipe, this->device, this->config, i.sensorType, i.streamName, this->crtDir, i.profileIdx);
+    for (int i = 0; i < settings.sensorTypes.size(); i++) {
+        OBSensorType st = settings.sensorTypes[i];
+        if (st == OB_SENSOR_COLOR || st == OB_SENSOR_DEPTH || st == OB_SENSOR_IR_RIGHT || st == OB_SENSOR_IR_LEFT) {
+            auto sm = std::make_shared<ImageStreamManager>(this->pipe, this->device, this->config, st, settings.streamNames[i], this->crtDir, settings.profileIdx[i], settings.isSaveVideo[i], settings.isSaveImage[i], settings.containerFormats[i], settings.codecs[i], settings.imageFormats[i], settings.compressionParams[i]);
+            this->streamManagers.push_back(sm);
+        } else if (st == OB_SENSOR_GYRO || st == OB_SENSOR_ACCEL) {
+            auto sm = std::make_shared<ImuStreamManager>(this->pipe, this->device, this->config, st, settings.streamNames[i], this->crtDir, settings.profileIdx[i]);
             this->streamManagers.push_back(sm);
         } else {
-            auto sm = std::make_shared<ImageStreamManager>(this->pipe, this->device, this->config, i.sensorType, i.streamName, this->crtDir, i.profileIdx, i.isSaveVideo, i.isSaveImage);
-            this->streamManagers.push_back(sm);
+            std::cerr << "Invalid sensor type: " << st << std::endl;
+            continue;
         }
     }
 

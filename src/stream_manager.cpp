@@ -79,13 +79,21 @@ ImageStreamManager::ImageStreamManager(std::shared_ptr<ob::Pipeline> pipe,
                                        const std::string& saveDir,
                                        int profileIdx,
                                        bool isSaveVideo,
-                                       bool isSaveImage) :
+                                       bool isSaveImage,
+                                       const std::string& containerFormat,
+                                       int codec,
+                                       const std::string& imageFormat,
+                                       std::vector<int> compressionParams) :
     StreamManager(pipe, device, config, sensorType, streamName, saveDir, profileIdx) {
     if (!this->isEnable) {
         return;
     }
     this->isSaveVideo = isSaveVideo;
     this->isSaveImage = isSaveImage;
+    this->containerFormat = containerFormat;
+    this->codec = codec;
+    this->imageFormat = imageFormat;
+    this->compressionParams = compressionParams;
     // Check if sensor type is valid
     if (sensorType != OB_SENSOR_COLOR && sensorType != OB_SENSOR_DEPTH && sensorType != OB_SENSOR_IR_LEFT && sensorType != OB_SENSOR_IR_RIGHT) {
         std::cerr << "Invalid sensor type for ImageStreamManager" << std::endl;
@@ -250,8 +258,11 @@ inline void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> 
 
     if (this->isSaveImage) {
         std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(depthFrame->timeStamp()) + "ms" + this->imageFormat;
-        cv::imwrite(imageName, depthMat, this->compressionParams);
-        // cv::imwrite(imageName, depthMat8, this->compressionParams);
+        if (this->imageFormat == ".jp2" || this->imageFormat == ".png") {
+            cv::imwrite(imageName, depthMat, this->compressionParams);
+        } else {
+            cv::imwrite(imageName, depthMat8, this->compressionParams);
+        }
         std::cout << "save depth image: " << imageName << std::endl;
     }
 
@@ -269,7 +280,7 @@ inline void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> fra
     cv::Mat irMat(this->height, this->width, CV_8UC1, irFrame->data());
 
     this->timecodeWriter << irFrame->timeStamp() << std::endl;
-    
+
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(irMat);
         std::cout << "add frame to ir video" << irFrame->timeStamp() << std::endl;
