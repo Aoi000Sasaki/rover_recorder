@@ -4,7 +4,7 @@
 Settings loadSettings(const std::string& settingsPath);
 
 int main(int argc, char** argv) {
-    Settings settings = loadSettings("/home/amsl/orbbec-ws/src/rover_recorder/settings.json");
+    Settings settings = loadSettings("/home/rock/camera_test/rover_recorder/settings.json");
 
     if (argc == 2) {
         try {
@@ -35,7 +35,7 @@ Settings loadSettings(const std::string& settingsPath) {
             {".jpg", ".jp2", ".jpg", ".jpg", "", ""},
             {{cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {}, {}},
             3.0,
-            "/home/amsl/orbbec-ws/src/rover_recorder",
+            "/home/rock/camera_test/rover_recorder",
         };
         return settings;
     } else {
@@ -85,7 +85,7 @@ Settings loadSettings(const std::string& settingsPath) {
 
             isSaveVideo.push_back(j["isSaveVideo"][i]);
             isSaveImage.push_back(j["isSaveImage"][i]);
-            profileIdx.push_back(OB_PROFILE_DEFAULT);
+            profileIdx.push_back(j["profileIdx"][i]);
 
             containerFormats.push_back(j["containerFormats"][i]);
             if (containerFormats[i] == ".mp4") {

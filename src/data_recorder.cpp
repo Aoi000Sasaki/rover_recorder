@@ -37,12 +37,17 @@ DataRecorder::DataRecorder(Settings settings) {
 
 void DataRecorder::startProcess() {
     auto start = std::chrono::high_resolution_clock::now();
+    int count = 0;
     while (true) {
         process();
 
         auto now = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start);
-        if (duration.count() > this->videoLength) {
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+        if (count != duration.count() / 100) {
+            count = duration.count() / 100;
+            std::cout << count * 100 << " ms passed (" << duration.count() << " ms)" << std::endl;
+        }
+        if (duration.count() > this->videoLength * 1000) {
             for (auto &manager : this->streamManagers) {
                 manager->close();
             }

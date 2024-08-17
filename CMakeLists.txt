@@ -6,7 +6,7 @@ set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_executable(rover_recorder src/main.cpp src/data_recorder.cpp src/stream_manager.cpp)
 
-set(OrbbecSDK_DIR "/home/amsl/orbbec-ws/src/OrbbecSDK")
+set(OrbbecSDK_DIR "/home/rock/camera_test/OrbbecSDK")
 find_package(OrbbecSDK REQUIRED)
 target_link_libraries(${PROJECT_NAME} OrbbecSDK::OrbbecSDK)
 
