@@ -7,6 +7,11 @@ DataRecorder::DataRecorder(Settings settings) {
     this->config = std::make_shared<ob::Config>();
     createSaveDir();
 
+    // if videoLength is negative, record until stopProcess() is called
+    if (this->videoLength < 0) {
+        this->isUseFlag = true;
+    }
+
     // Get connected device list
     // Assert only one device is connected
     auto devList = this->context.queryDeviceList();
@@ -37,17 +42,31 @@ DataRecorder::DataRecorder(Settings settings) {
 
 void DataRecorder::startProcess() {
     auto start = std::chrono::high_resolution_clock::now();
-    int count = 0;
+    int timeCount = 0;
+    int loopCount = 0;
     while (true) {
         process();
 
         auto now = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
-        if (count != duration.count() / 100) {
-            count = duration.count() / 100;
-            std::cout << count * 100 << " ms passed (" << duration.count() << " ms)" << std::endl;
+        loopCount++;
+        if (timeCount != duration.count() / 100) {
+            timeCount = duration.count() / 100;
+            std::cout << duration.count() << " ms passed (ave hz:" << loopCount / (duration.count() / 1000.0) << ")" << std::endl;
         }
-        if (duration.count() > this->videoLength * 1000) {
+
+        // if isUseFlag is true and stopFlag is true, stop recording
+        if (this->isUseFlag && this->stopFlag.load()) {
+            for (auto &manager : this->streamManagers) {
+                manager->close();
+            }
+            this->pipe->stop();
+            std::cout << "Record finished" << std::endl;
+            break;
+        }
+
+        // if isUseFlag is false and duration is longer than videoLength, stop recording
+        if (!this->isUseFlag && duration.count() > this->videoLength * 1000) {
             for (auto &manager : this->streamManagers) {
                 manager->close();
             }
@@ -74,6 +93,10 @@ inline void DataRecorder::process() {
     {
         manager->processFrameset(frameset);
     }
+}
+
+void DataRecorder::stopProcess() {
+    this->stopFlag.store(true);
 }
 
 void DataRecorder::createSaveDir() {
