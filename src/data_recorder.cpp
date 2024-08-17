@@ -52,7 +52,7 @@ void DataRecorder::startProcess() {
         loopCount++;
         if (timeCount != duration.count() / 100) {
             timeCount = duration.count() / 100;
-            std::cout << duration.count() << " ms passed (ave hz:" << loopCount / (duration.count() / 1000.0) << ")" << std::endl;
+            std::cout << "Elapsed time: " << duration.count() << " ms (avg frequency: " << loopCount / (duration.count() / 1000.0) << " Hz)" << std::endl;
         }
 
         // if isUseFlag is true and stopFlag is true, stop recording

@@ -5,19 +5,14 @@ Settings loadSettings(const std::string& settingsPath);
 
 int main(int argc, char** argv) {
     Settings settings = loadSettings("/home/rock/camera_test/rover_recorder/settings.json");
-
-    if (argc == 2) {
-        try {
-            settings.videoLength = std::stod(argv[1]);
-        } catch (std::invalid_argument &e) {
-            std::cout << "videoLength set to default value: " << settings.videoLength << std::endl;
-        }
-    } else {
-        std::cout << "videoLength set to default value: " << settings.videoLength << std::endl;
-    }
-
     DataRecorder dataRecorder(settings);
-    dataRecorder.startProcess();
+
+    std::thread recorderThread(&DataRecorder::startProcess, &dataRecorder);
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    dataRecorder.stopProcess();
+
+    recorderThread.join();
     return 0;
 }
 
