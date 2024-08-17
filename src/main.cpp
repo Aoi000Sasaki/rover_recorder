@@ -1,18 +1,42 @@
 #include "data_recorder.hpp"
+#include "gpio_manager.hpp"
 #include "libobsensor/ObSensor.hpp"
 
 Settings loadSettings(const std::string& settingsPath);
 
 int main(int argc, char** argv) {
     Settings settings = loadSettings("/home/rock/camera_test/rover_recorder/settings.json");
-    DataRecorder dataRecorder(settings);
 
+    // continuous recording mode
+    settings.videoLength = -1.0;
+
+    DataRecorder dataRecorder(settings);
+    GpioManager gpioManager;
+
+    while (true) {
+        if (gpioManager.get_GPIO_PDU_C()) {
+            break;
+        }
+        std::cout << "Waiting for PDU_C signal..." << std::endl;
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    gpioManager.set_GPIO_camera(true);
     std::thread recorderThread(&DataRecorder::startProcess, &dataRecorder);
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-    dataRecorder.stopProcess();
+    while (true) {
+        if (!gpioManager.get_GPIO_PDU_C()) {
+            dataRecorder.stopProcess();
+            std::cout << "Recording stopped." << std::endl;
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 
     recorderThread.join();
+    gpioManager.set_GPIO_camera(false);
     return 0;
 }
 

@@ -5,7 +5,7 @@
     "isSaveImage": [false, true, false, false, true, true],
     "containerFormats": [".mp4", ".mp4", ".mp4", ".mp4", "-", "-"],
     "imageFormats": [".jpg", ".png", ".jpg", ".jpg", "-", "-"],
-    "videoLength": 10.0,
+    "videoLength": -10.0,
     "saveDir": "/home/rock/camera_test/rover_recorder",
     "jpgQuality": 100,
     "jp2Quality": 600,
