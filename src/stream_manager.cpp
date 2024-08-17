@@ -224,13 +224,11 @@ inline void ImageStreamManager::processColorFrame(std::shared_ptr<ob::FrameSet> 
 
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(colorMat);
-        std::cout << "add frame to color video" << colorFrame->timeStamp() << std::endl;
     }
 
     if (this->isSaveImage) {
         std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(colorFrame->timeStamp()) + "ms" + this->imageFormat;
         cv::imwrite(imageName, colorMat, this->compressionParams);
-        std::cout << "save color image: " << imageName << std::endl;
     }
 
     this->count++;
@@ -245,15 +243,17 @@ inline void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> 
     float valueScale = depthFrame->getValueScale();
     cv::Mat depthMat(this->height, this->width, CV_16UC1, depthFrame->data());
     cv::Mat depthMat8;
-    double min, max;
-    cv::minMaxLoc(depthMat, &min, &max);
-    depthMat.convertTo(depthMat8, CV_8UC1, 255.0 / (max - min));
+
+    if (this->isSaveVideo || (this->imageFormat != ".jp2" && this->imageFormat != ".png")) {
+        double min, max;
+        cv::minMaxLoc(depthMat, &min, &max);
+        depthMat.convertTo(depthMat8, CV_8UC1, 255.0 / (max - min));
+    }
 
     this->timecodeWriter << depthFrame->timeStamp() << "," << valueScale << std::endl;
 
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(depthMat8);
-        std::cout << "add frame to depth video" << depthFrame->timeStamp() << std::endl;
     }
 
     if (this->isSaveImage) {
@@ -263,7 +263,6 @@ inline void ImageStreamManager::processDepthFrame(std::shared_ptr<ob::FrameSet> 
         } else {
             cv::imwrite(imageName, depthMat8, this->compressionParams);
         }
-        std::cout << "save depth image: " << imageName << std::endl;
     }
 
     this->count++;
@@ -283,13 +282,11 @@ inline void ImageStreamManager::processIrFrame(std::shared_ptr<ob::FrameSet> fra
 
     if (this->isSaveVideo && this->videoWriter.isOpened()) {
         this->videoWriter.write(irMat);
-        std::cout << "add frame to ir video" << irFrame->timeStamp() << std::endl;
     }
 
     if (this->isSaveImage) {
         std::string imageName = this->saveDir + "/" + this->streamName + "/" + std::to_string(this->count) + "_" + std::to_string(irFrame->timeStamp()) + "ms" + this->imageFormat;
         cv::imwrite(imageName, irMat, this->compressionParams);
-        std::cout << "save ir image: " << imageName << std::endl;
     }
 
     this->count++;
