@@ -1,12 +1,13 @@
 {
     "sensorTypes": [2, 3, 7, 6, 5, 4],
-    "isSaveVideo": [true, true, true, true, true, true],
-    "isSaveImage": [true, true, true, true, true, true],
+    "profileIdx": [72, 19, 19, 19, 0, 0],
+    "isSaveVideo": [true, false, true, true, true, true],
+    "isSaveImage": [false, true, false, false, true, true],
     "containerFormats": [".mp4", ".mp4", ".mp4", ".mp4", "-", "-"],
-    "imageFormats": [".jpg", ".jp2", ".jpg", ".jpg", "-", "-"],
-    "videoLength": 5.0,
-    "saveDir": "/home/amsl/orbbec-ws/src/rover_recorder",
+    "imageFormats": [".jpg", ".png", ".jpg", ".jpg", "-", "-"],
+    "videoLength": -10.0,
+    "saveDir": "/home/rock/camera_test/rover_recorder",
     "jpgQuality": 100,
     "jp2Quality": 600,
-    "pngQuality": 9
+    "pngQuality": 0
 }

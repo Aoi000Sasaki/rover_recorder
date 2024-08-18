@@ -8,6 +8,7 @@
 #include <sstream>
 #include <fstream>
 #include <filesystem>
+#include <atomic>
 #include <nlohmann/json.hpp>
 #include "libobsensor/ObSensor.hpp"
 #include "opencv2/opencv.hpp"
@@ -25,6 +26,7 @@ struct Settings {
     std::vector<std::vector<int>> compressionParams;
     float videoLength;
     std::string saveDir;
+    int recordCount;
 };
 
 class DataRecorder {
@@ -33,6 +35,7 @@ class DataRecorder {
         void createSaveDir();
         void startProcess();
         void process();
+        void stopProcess();
         void saveMetadata();
 
     private:
@@ -41,11 +44,14 @@ class DataRecorder {
         std::shared_ptr<ob::Config> config;
         std::shared_ptr<ob::Device> device;
 
+        std::atomic<bool> stopFlag{false};
+        bool isUseFlag = false;
         std::vector<std::shared_ptr<StreamManager>> streamManagers;
         float videoLength;
         std::string saveDir;
         std::string crtDir;
         int frameCount = 0;
+        int recordCount = 0;
 };
 
 #endif

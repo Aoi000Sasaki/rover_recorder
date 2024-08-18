@@ -1,24 +1,54 @@
 #include "data_recorder.hpp"
+#include "gpio_manager.hpp"
 #include "libobsensor/ObSensor.hpp"
 
 Settings loadSettings(const std::string& settingsPath);
 
 int main(int argc, char** argv) {
-    Settings settings = loadSettings("/home/amsl/orbbec-ws/src/rover_recorder/settings.json");
+    Settings settings = loadSettings("/home/rock/camera_test/rover_recorder/settings.json");
 
-    if (argc == 2) {
-        try {
-            settings.videoLength = std::stod(argv[1]);
-        } catch (std::invalid_argument &e) {
-            std::cout << "videoLength set to default value: " << settings.videoLength << std::endl;
+    settings.videoLength = -1.0; // continuous recording mode
+    GpioManager gpioManager;
+    int count = 0; // record count
+
+    while (true) {
+        settings.recordCount = count;
+        DataRecorder dataRecorder(settings);
+
+        // Wait for PDU_C signal
+        while (true) {
+            if (gpioManager.get_GPIO_PDU_C()) {
+                break;
+            }
+            std::cout << "[INFO][Record #" << count << "] Waiting for PDU_C signal..." << std::endl;
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-    } else {
-        std::cout << "videoLength set to default value: " << settings.videoLength << std::endl;
-    }
 
-    DataRecorder dataRecorder(settings);
-    dataRecorder.startProcess();
-    return 0;
+        // Start recording
+        gpioManager.set_GPIO_camera(true);
+        std::thread recorderThread(&DataRecorder::startProcess, &dataRecorder);
+
+        // Wait for PDU_C signal to stop recording
+        while (true) {
+            if (!gpioManager.get_GPIO_PDU_C()) {
+                dataRecorder.stopProcess();
+                std::cout << "[INFO][Record #" << count << "] Recording stopped." << std::endl;
+                break;
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+
+        recorderThread.join();
+        gpioManager.set_GPIO_camera(false);
+
+        // Wait for camera shutdown
+        std::cout << "Waiting for camera shutdown..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::cout << "Camera shutdown complete." << std::endl;
+        count++;
+    }
 }
 
 Settings loadSettings(const std::string& settingsPath) {
@@ -27,15 +57,16 @@ Settings loadSettings(const std::string& settingsPath) {
         Settings settings = {
             {OB_SENSOR_COLOR, OB_SENSOR_DEPTH, OB_SENSOR_IR_RIGHT, OB_SENSOR_IR_LEFT, OB_SENSOR_GYRO, OB_SENSOR_ACCEL},
             {"color", "depth", "ir_right", "ir_left", "gyro", "accel"},
-            {true, true, true, true, true, true},
-            {true, true, true, true, false, false},
-            {OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT},
+            {true, false, true, true, false, false},
+            {false, true, false, false, false, false},
+            {72, 19, 19, 19, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT},
             {".mp4", ".mp4", ".mp4", ".mp4", "", ""},
             {cv::VideoWriter::fourcc('X', '2', '6', '4'), cv::VideoWriter::fourcc('X', '2', '6', '4'), cv::VideoWriter::fourcc('X', '2', '6', '4'), cv::VideoWriter::fourcc('X', '2', '6', '4'), 0, 0},
-            {".jpg", ".jp2", ".jpg", ".jpg", "", ""},
-            {{cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {}, {}},
-            3.0,
-            "/home/amsl/orbbec-ws/src/rover_recorder",
+            {".jpg", ".png", ".jpg", ".jpg", "", ""},
+            {{cv::IMWRITE_JPEG_QUALITY, 100}, {cv::IMWRITE_PNG_COMPRESSION, 0}, {cv::IMWRITE_JPEG_QUALITY, 100}, {cv::IMWRITE_JPEG_QUALITY, 100}, {}, {}},
+            -1.0,
+            "/home/rock/camera_test/rover_recorder",
+            0,
         };
         return settings;
     } else {
@@ -85,7 +116,7 @@ Settings loadSettings(const std::string& settingsPath) {
 
             isSaveVideo.push_back(j["isSaveVideo"][i]);
             isSaveImage.push_back(j["isSaveImage"][i]);
-            profileIdx.push_back(OB_PROFILE_DEFAULT);
+            profileIdx.push_back(j["profileIdx"][i]);
 
             containerFormats.push_back(j["containerFormats"][i]);
             if (containerFormats[i] == ".mp4") {
