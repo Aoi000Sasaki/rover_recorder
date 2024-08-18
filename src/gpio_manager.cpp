@@ -54,9 +54,22 @@ bool GpioManager::get_GPIO_PDU_C() {
     int val = gpiod_line_get_value(this->line_PDU_C);
     if (val < 0) {
         perror("Read line input failed");
-        return false;
+        return this->return_val;
     }
-    return val == 1;
+
+    bool current_PDU_C_val = (val == 1);
+    if (current_PDU_C_val == last_PDU_C_val) {
+        PDU_C_continuous_count++;
+    } else {
+        last_PDU_C_val = current_PDU_C_val;
+        PDU_C_continuous_count = 0;
+    }
+
+    if (PDU_C_continuous_count >= PDU_C_continuous_threshold) {
+        this->return_val = current_PDU_C_val;
+    }
+
+    return this->return_val;
 }
 
 void GpioManager::set_GPIO_camera(bool value) {
@@ -64,3 +77,4 @@ void GpioManager::set_GPIO_camera(bool value) {
         perror("Set line output failed");
     }
 }
+

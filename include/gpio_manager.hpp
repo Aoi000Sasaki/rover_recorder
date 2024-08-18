@@ -26,4 +26,9 @@ class GpioManager {
         const int GPIO_camera_LINE_OFFSET = 15;
         struct gpiod_chip *chip_camera;
         struct gpiod_line *line_camera;
+
+        bool return_val = false;
+        bool last_PDU_C_val = false;
+        int PDU_C_continuous_count = 0;
+        int PDU_C_continuous_threshold = 10;
 };
