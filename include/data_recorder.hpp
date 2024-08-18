@@ -26,6 +26,7 @@ struct Settings {
     std::vector<std::vector<int>> compressionParams;
     float videoLength;
     std::string saveDir;
+    int recordCount;
 };
 
 class DataRecorder {
@@ -50,6 +51,7 @@ class DataRecorder {
         std::string saveDir;
         std::string crtDir;
         int frameCount = 0;
+        int recordCount = 0;
 };
 
 #endif

@@ -3,6 +3,7 @@
 DataRecorder::DataRecorder(Settings settings) {
     this->videoLength = settings.videoLength;
     this->saveDir = settings.saveDir + "/data/";
+    this->recordCount = settings.recordCount;
     this->pipe = std::make_shared<ob::Pipeline>();
     this->config = std::make_shared<ob::Config>();
     createSaveDir();
@@ -52,7 +53,7 @@ void DataRecorder::startProcess() {
         loopCount++;
         if (timeCount != duration.count() / 100) {
             timeCount = duration.count() / 100;
-            std::cout << "Elapsed time: " << duration.count() << " ms (avg frequency: " << loopCount / (duration.count() / 1000.0) << " Hz)" << std::endl;
+            std::cout << "[INFO][Record #" << this->recordCount << "] " << "Elapsed time: " << duration.count() << " ms (avg frequency: " << loopCount / (duration.count() / 1000.0) << " Hz)" << std::endl;
         }
 
         // if isUseFlag is true and stopFlag is true, stop recording

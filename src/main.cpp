@@ -7,37 +7,48 @@ Settings loadSettings(const std::string& settingsPath);
 int main(int argc, char** argv) {
     Settings settings = loadSettings("/home/rock/camera_test/rover_recorder/settings.json");
 
-    // continuous recording mode
-    settings.videoLength = -1.0;
-
-    DataRecorder dataRecorder(settings);
+    settings.videoLength = -1.0; // continuous recording mode
     GpioManager gpioManager;
+    int count = 0; // record count
 
     while (true) {
-        if (gpioManager.get_GPIO_PDU_C()) {
-            break;
-        }
-        std::cout << "Waiting for PDU_C signal..." << std::endl;
+        settings.recordCount = count;
+        DataRecorder dataRecorder(settings);
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+        // Wait for PDU_C signal
+        while (true) {
+            if (gpioManager.get_GPIO_PDU_C()) {
+                break;
+            }
+            std::cout << "[INFO][Record #" << count << "] Waiting for PDU_C signal..." << std::endl;
 
-    gpioManager.set_GPIO_camera(true);
-    std::thread recorderThread(&DataRecorder::startProcess, &dataRecorder);
-
-    while (true) {
-        if (!gpioManager.get_GPIO_PDU_C()) {
-            dataRecorder.stopProcess();
-            std::cout << "Recording stopped." << std::endl;
-            break;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+        // Start recording
+        gpioManager.set_GPIO_camera(true);
+        std::thread recorderThread(&DataRecorder::startProcess, &dataRecorder);
 
-    recorderThread.join();
-    gpioManager.set_GPIO_camera(false);
-    return 0;
+        // Wait for PDU_C signal to stop recording
+        while (true) {
+            if (!gpioManager.get_GPIO_PDU_C()) {
+                dataRecorder.stopProcess();
+                std::cout << "[INFO][Record #" << count << "] Recording stopped." << std::endl;
+                break;
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+
+        recorderThread.join();
+        gpioManager.set_GPIO_camera(false);
+
+        // Wait for camera shutdown
+        std::cout << "Waiting for camera shutdown..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::cout << "Camera shutdown complete." << std::endl;
+        count++;
+    }
 }
 
 Settings loadSettings(const std::string& settingsPath) {
