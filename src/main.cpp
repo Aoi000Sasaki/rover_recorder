@@ -57,15 +57,16 @@ Settings loadSettings(const std::string& settingsPath) {
         Settings settings = {
             {OB_SENSOR_COLOR, OB_SENSOR_DEPTH, OB_SENSOR_IR_RIGHT, OB_SENSOR_IR_LEFT, OB_SENSOR_GYRO, OB_SENSOR_ACCEL},
             {"color", "depth", "ir_right", "ir_left", "gyro", "accel"},
-            {true, true, true, true, true, true},
-            {true, true, true, true, false, false},
-            {OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT},
+            {true, false, true, true, false, false},
+            {false, true, false, false, false, false},
+            {72, 19, 19, 19, OB_PROFILE_DEFAULT, OB_PROFILE_DEFAULT},
             {".mp4", ".mp4", ".mp4", ".mp4", "", ""},
             {cv::VideoWriter::fourcc('X', '2', '6', '4'), cv::VideoWriter::fourcc('X', '2', '6', '4'), cv::VideoWriter::fourcc('X', '2', '6', '4'), cv::VideoWriter::fourcc('X', '2', '6', '4'), 0, 0},
-            {".jpg", ".jp2", ".jpg", ".jpg", "", ""},
-            {{cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 600}, {}, {}},
-            3.0,
+            {".jpg", ".png", ".jpg", ".jpg", "", ""},
+            {{cv::IMWRITE_JPEG_QUALITY, 100}, {cv::IMWRITE_PNG_COMPRESSION, 0}, {cv::IMWRITE_JPEG_QUALITY, 100}, {cv::IMWRITE_JPEG_QUALITY, 100}, {}, {}},
+            -1.0,
             "/home/rock/camera_test/rover_recorder",
+            0,
         };
         return settings;
     } else {
